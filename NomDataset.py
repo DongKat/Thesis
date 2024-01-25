@@ -1,4 +1,3 @@
-#%%
 import cv2
 import os
 import pandas as pd
@@ -90,6 +89,9 @@ class NomDatasetV1(Dataset):
         return self.total_images
     
     def resize_to_divisible_by_scale(self, img, scale=4):
+        """
+        Resize the image to be divisible by scale
+        """
         h, w, _ = img.shape
         h = h - h % scale
         w = w - w % scale
@@ -172,6 +174,10 @@ class NomDatasetV2:
         return self.total_images
     
     def resize_to_divisible_by_scale(self, img, scale=4):
+        """
+        Resize the image to be divisible by scale (Reuse the one from NomDatasetV1)
+        """
+        
         h, w, _ = img.shape
         h = h - h % scale
         w = w - w % scale
@@ -189,12 +195,12 @@ class NomDatasetV2:
         #   - LEFT -= dif_w
         #   - RIGHT -= dif_w
         
-        for i in range(len(self.image_coords)):
-            for j in range(len(self.image_coords[i])):
-                self.image_coords[i][j][1] -= dif_h
-                self.image_coords[i][j][3] -= dif_h
+        for i,_ in enumerate(self.image_coords):
+            for j,_ in enumerate(self.image_coords[i]):
                 self.image_coords[i][j][0] -= dif_w
+                self.image_coords[i][j][1] -= dif_h
                 self.image_coords[i][j][2] -= dif_w
+                self.image_coords[i][j][3] -= dif_h
         
         return img
     
