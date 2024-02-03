@@ -1,8 +1,11 @@
+#%%
 import cv2
 import os
 import pandas as pd
 from torch.utils.data import Dataset
-from tqdm.autonotebook import tqdm
+from torchvision import transforms
+from tqdm import tqdm
+import pytorch_lightning as pl
 
 class NomDatasetV1(Dataset):
     """
@@ -73,6 +76,7 @@ class NomDatasetV1(Dataset):
                 cropped_directory = "NomDataset/datasets/cropped_images/"
                 cropped_image_path = os.path.join(cropped_directory, cropped_image_name)
                 # print(cropped_image_path)
+                
                 cv2.imwrite(cropped_image_path, cropped_image)
                 
                 # Save the cropped image path
@@ -134,7 +138,7 @@ class NomDatasetV2:
     """
     
     
-    def __init__(self, root_annotation: str, root_image: str, scale: int):
+    def __init__(self, root_annotation: str, root_image: str, scale: int, input_dim:tuple):
         super().__init__()
         
         if root_annotation is None:
@@ -144,6 +148,7 @@ class NomDatasetV2:
         if scale is None:
             raise ValueError("scale is None")
         
+        self.input_dim = input_dim
         self.scale = scale
         self.total_images = len(os.listdir(root_image))
         self.image_paths =          []
@@ -188,43 +193,72 @@ class NomDatasetV2:
         
         img = img[:h, :w, :]
         
-        # Adjust crop coords to the new image size
-        # How I do this:
-        #   - TOP -= dif_h
-        #   - BOTTOM -= dif_h
-        #   - LEFT -= dif_w
-        #   - RIGHT -= dif_w
-        
-        for i,_ in enumerate(self.image_coords):
-            for j,_ in enumerate(self.image_coords[i]):
-                self.image_coords[i][j][0] -= dif_w
-                self.image_coords[i][j][1] -= dif_h
-                self.image_coords[i][j][2] -= dif_w
-                self.image_coords[i][j][3] -= dif_h
-        
         return img
     
     def __getitem__(self, index):
         assert index <= len(self), 'index range error'
-        
+
         image_path = self.image_paths[index]
-        print(image_path)
+        # print(image_path)
         img = cv2.imread(image_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                
+        
         img_hr = self.resize_to_divisible_by_scale(img, scale=self.scale)
         img_lr = cv2.resize(img_hr, (img_hr.shape[1] // self.scale, img_hr.shape[0] // self.scale), interpolation=cv2.INTER_CUBIC)
+        
+        # preprocess = transforms.Compose([
+        #     transforms.ToTensor(),
+        #     transforms.Normalize(mean=[0.485, 0.456, 0.406],
+        #                                std=[0.229, 0.224, 0.225]),
+        # ])
         
         crop_coords_hr = self.image_coords[index]
         crop_coords_lr = []
         for i in range(len(crop_coords_hr)):
             crop_coords_lr.append([x // self.scale for x in crop_coords_hr[i]])
         
-        
         label_char = self.labels_char[index]
         label_unicode_cn = self.labels_unicode_cn[index]
         label_unicode_vn = self.labels_unicode_vn[index]
 
 
-        return img_hr, img_lr, crop_coords_hr, crop_coords_lr, label_char, label_unicode_cn, label_unicode_vn
-            
+        return image_path, img_hr, img_lr, crop_coords_hr, crop_coords_lr, label_char, label_unicode_cn, label_unicode_vn
+
+    
+# #%%
+# if __name__ == "__main__":
+    # root_annotation = "NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1871/1871-annotation/annotation-mynom"
+    # root_image = "NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1871/1871-raw-images"
+    # scale = 2
+    # dataset = NomDatasetV1(root_annotation, root_image, scale)
+        
+    # #%%
+    # from matplotlib import pyplot as plt
+    # img_hr, img_lr, label_char, label_unicode_cn, label_unicode_vn = dataset[0]
+    # print("Label char: " + label_char)
+    # print("Label CN: " + label_unicode_cn)
+    # print("Label VN: " + label_unicode_vn)
+
+    # plt.subplot(1,2,1)
+    # plt.imshow(img_hr)
+    # plt.subplot(1,2,2)  
+    # plt.imshow(img_lr)
+
+    # dataset = NomDatasetV2(root_annotation, root_image, scale)
+
+    # img_path, img_hr, img_lr, crop_coords_hr, crop_coords_lr, label_char, label_unicode_cn, label_unicode_vn = dataset[0]
+
+    # print("Label char: " + str(label_char))
+    # print("Label CN: " + str(label_unicode_cn))
+    # print("Label VN: " + str(label_unicode_vn))
+
+    # for i in range(len(crop_coords_hr)):
+    #     cv2.rectangle(img_hr, (crop_coords_hr[i][0], crop_coords_hr[i][1]), (crop_coords_hr[i][2], crop_coords_hr[i][3]), (0, 255, 0), 2)
+        
+    # for i in range(len(crop_coords_lr)):
+    #     cv2.rectangle(img_lr, (crop_coords_lr[i][0], crop_coords_lr[i][1]), (crop_coords_lr[i][2], crop_coords_lr[i][3]), (0, 255, 0), 2)
+
+    # plt.subplot(1,2,1)
+    # plt.imshow(img_hr)
+    # plt.subplot(1,2,2)  
+    # plt.imshow(img_lr)
