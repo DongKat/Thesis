@@ -9,7 +9,7 @@ import os
 import glob
 import random
 import shutil
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 import pybboxes as pbx
 
 
@@ -137,7 +137,7 @@ model.load_state_dict(torch.load(model_path), strict=True)
 model.eval()
 model = model.to(DEVICE)
 
-for i, box_image in enumerate(os.listdir(yolo_box_crops)):
+for i, box_image in tqdm(enumerate(os.listdir(yolo_box_crops))):
     img = cv2.imread(os.path.join(yolo_box_crops, box_image))
     img = torch.from_numpy(img).permute(2, 0, 1).unsqueeze(0).float().to(DEVICE) / 255.0
     
@@ -145,11 +145,54 @@ for i, box_image in enumerate(os.listdir(yolo_box_crops)):
         sr_img = model(img).data.squeeze(0).float().cpu().clamp_(0, 1).permute(1, 2, 0).numpy()
         sr_img = (sr_img * 255).round().astype(np.uint8)
         
-        cv2.imwrite(os.path.join(yolo_box_crops_SR, f"{box_image.split('.')[0]}_SR.jpg"), sr_img)
+        cv2.imwrite(os.path.join(yolo_box_crops_SR, f"{box_image.split('.')[0]}_SR.jpg"), sr_img) 
         
-    break
+#%% ResNet on SR images
+from NomResnet import PytorchResNet101
+data_path_label = 'NomDataset/HWDB1.1-bitmap64-ucode-hannom-v2-tst_seen-label-set-ucode.pkl'
+with open(data_path_label, 'rb') as f:
+    unicode_labels = pickle.load(f)
+    unicode_labels = sorted(list(unicode_labels.keys()))
+print("Total number of unicode: ", len(unicode_labels))
+print(unicode_labels)
 
-        
-        
-        
+weights_path = 'PytorchResNet101Pretrained-data-v2-epoch=14-val_loss_epoch=1.42927-train_acc_epoch=0.99997-val_acc_epoch=0.79039.ckpt'
+model = PytorchResNet101.load_from_checkpoint(weights_path, num_labels=len(unicode_labels))
+model.eval()
+model.freeze()
+model.to(DEVICE)
+
+yolo_box_crops_SR = 'TempResources/SR_from_YoloBoxCrops'
+
+file_list = os.listdir(yolo_box_crops_SR)
+random.shuffle(file_list)
+
+i = 0
+
+for i, image_file in enumerate(file_list):
+    image_path = os.path.join(yolo_box_crops_SR, image_file)
+    image = cv2.imread(image_path)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = cv2.resize(image, (256, 256))
+    image = image / 255.0
+    image = np.transpose(image, (2, 0, 1))
+    image = torch.tensor(image, dtype=torch.float32).unsqueeze(0).to(DEVICE)
+
+    pred = model(image)
+    pred = softmax(pred)
+    pred = torch.argmax(pred, dim=1)
+    pred = unicode_labels[pred.item()]
+    pred = "0x" + pred
     
+    print("Predicted label unicode: ", pred)
+    
+    pred = int(pred, 16)
+    pred = chr(pred)
+
+    print("Predicted label: ", pred)
+
+    plt.imshow(image.squeeze(0).cpu().numpy().transpose(1, 2, 0))
+    plt.show()
+    i+=1
+    if i == 11:
+        break
