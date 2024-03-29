@@ -166,3 +166,5 @@ yolov5/
 ESRGAN/
 TempResources/
 Backup/
+runs/
+yolov5_runs/
