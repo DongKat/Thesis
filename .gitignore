@@ -168,3 +168,4 @@ TempResources/
 Backup/
 runs/
 yolov5_runs/
+wandb/
