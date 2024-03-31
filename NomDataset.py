@@ -225,19 +225,19 @@ class NomDatasetV2:
         return image_path, img_hr, img_lr, crop_coords_hr, crop_coords_lr, label_char, label_unicode_cn, label_unicode_vn
 
     
-class NomDatasetV3(pl.LightningDataModule):
-    def __init__(self, root_annotation: str, root_image: str, scale: int, input_dim:tuple):
-        super().__init__()
+# class NomDatasetV3(pl.LightningDataModule):
+#     def __init__(self, root_annotation: str, root_image: str, scale: int, input_dim:tuple):
+#         super().__init__()
         
-        self.root_annotation = root_annotation
-        self.root_image = root_image
-        self.scale = scale
-        self.input_dim = input_dim
+#         self.root_annotation = root_annotation
+#         self.root_image = root_image
+#         self.scale = scale
+#         self.input_dim = input_dim
         
-    def prepare_data():
+#     def prepare_data():
         
     
-    def setup(self, stage=None):
+#     def setup(self, stage=None):
 
 
 # #%%
