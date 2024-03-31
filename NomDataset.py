@@ -2,10 +2,14 @@
 import cv2
 import os
 import pandas as pd
+import pybboxes as pybbx
+import pickle
+import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 from tqdm import tqdm
 import pytorch_lightning as pl
+from matplotlib import pyplot as plt
 
 class NomDatasetV1(Dataset):
     """
@@ -224,41 +228,151 @@ class NomDatasetV2:
 
         return image_path, img_hr, img_lr, crop_coords_hr, crop_coords_lr, label_char, label_unicode_cn, label_unicode_vn
 
+class NomDataset_Yolo(torch.utils.data.Dataset):
+    def __init__(self, image_file_path, annotation_file_path, label_file_path, unicode_dict_path, transform=None) -> None:
+        self.image_file_path = image_file_path
+        self.annotation_file_path = annotation_file_path
+        self.label_file_path = label_file_path
+        self.unicode_dict_path = unicode_dict_path
+        
+        self.image_files = []
+        self.annotation_files = []
+        self.label_files = []
+        
+        self.transform = transform
+        self.load_files_list()
+        
+        self.crop_dict = {'crops': [], 'original_images_name': [], 'labels': [], 'unicode_labels': []}
+        self.load_crops()        
+        
     
+    def load_files_list(self) -> None:
+        for file in os.listdir(self.image_file_path):
+            if file.endswith('.jpg'):
+                self.image_files.append(file)
+        for file in os.listdir(self.annotation_file_path):
+            if file.endswith('.txt'):
+                self.annotation_files.append(file)
+        assert len(self.image_files) == len(self.annotation_files), "Number of image files and annotation files do not match"
+        
+        for file in os.listdir(self.label_file_path):
+            if file.endswith('.xlsx'):
+                self.label_files.append(file)
+        assert len(self.image_files) == len(self.label_files), "Number of image files and label files do not match"
+
+    def load_crops(self) -> None:
+        
+        def find_best_IOU(ref_box, boxes) -> float | tuple | int:
+            def calculate_IOU(box1, box2):
+                x1, y1, x2, y2 = box1
+                x3, y3, x4, y4 = box2
+                x5, y5 = max(x1, x3), max(y1, y3)
+                x6, y6 = min(x2, x4), min(y2, y4)
+                intersection = max(0, x6 - x5) * max(0, y6 - y5)
+                area1 = (x2 - x1) * (y2 - y1)
+                area2 = (x4 - x3) * (y4 - y3)
+                union = area1 + area2 - intersection
+                return intersection / union
+            
+            best_iou = 0
+            best_box = None
+            best_index = -1
+            for index, box in enumerate(boxes, 0):
+                iou = calculate_IOU(ref_box, box)
+                if iou > best_iou:
+                    best_iou = iou
+                    best_box = box
+                    best_index = index
+            return best_iou, best_box, best_index
+        
+        
+        # # Label dictionary
+        # with open(self.unicode_dict_path, 'rb') as f:
+        #     unicode_labels = pickle.load(f)
+        # for i, (k, v) in enumerate(unicode_labels.items()):
+        #     unicode_labels[k] = i
+        
+        # For reading yolo txt files
+        total_n = len(self.image_files)
+        for image_file, txt_file, excel_file in tqdm(zip(self.image_files, self.annotation_files, self.label_files), total=total_n, disable=True):
+            image = cv2.cvtColor(cv2.imread(os.path.join(self.image_file_path, image_file)), cv2.COLOR_BGR2RGB)    # Grayscale, so I can stack 3 channels later
+            h, w, _ = image.shape
+            df = pd.read_excel(os.path.join(self.label_file_path, excel_file))
+
+            label_dict = {'boxes': [], 'labels': [], 'unicode_labels': []}
+            for _, row in df.iterrows():
+                x1, y1, x2, y2 = row['LEFT'], row['TOP'], row['RIGHT'], row['BOTTOM']
+                label = row['UNICODE']
+                ucode_label = row['CHAR']
+                label_dict['boxes'].append((x1, y1, x2, y2))
+                label_dict['labels'].append(label)
+                label_dict['unicode_labels'].append(ucode_label)
+
+            with open(os.path.join(self.annotation_file_path, txt_file), 'r') as f:
+                lines = f.readlines()
+                for line in lines:
+                    _, x, y, b_w, b_h = map(float, line.split(' '))
+                    bbox = pybbx.YoloBoundingBox(x, y, b_w, b_h, image_size=(w, h)).to_voc(return_values=True)
+                    x1, y1, x2, y2 = bbox
+                    
+                    # Find the best IOU to label the cropped image
+                    iou, box, idx = find_best_IOU(bbox, label_dict['boxes'])
+                    
+                    self.crop_dict['original_images_name'].append(image_file)
+                    crop_img = image[int(y1):int(y2), int(x1):int(x2)]
+                    self.crop_dict['crops'].append(crop_img)       
+                    self.crop_dict['unicode_labels'].append(label_dict['unicode_labels'][idx])
+                    
+                    self.crop_dict['labels'].append(label_dict['labels'][idx])
+                    # try:
+                    #     self.crop_dict['labels'].append(unicode_labels[label_dict['labels'][idx]])
+                    # except:
+                    #     print("Error at: ", image_file, label_dict['labels'][idx])
+                    #     plt.imshow(crop_img)
+                    #     print(label_dict['labels'][idx])
+            
+                    
+                    
+        
+    
+    
+    def __len__(self) -> int:
+        return len(self.crop_dict['crops'])
+        
+    def __getitem__(self, index: int) -> torch.Tensor | str:
+        assert index <= len(self), "Index out of range"
+                
+        image = self.crop_dict['crops'][index]
+        label = self.crop_dict['labels'][index]
+        ucode_label = self.crop_dict['unicode_labels'][index]
+
+        
+        if self.transform:
+            image = self.transform(image)
+        else:
+            image = cv2.resize(image, (64, 64), interpolation=cv2.INTER_CUBIC)
+            image = image *  1.0 / 255
+            
+            mean = [0.485, 0.456, 0.406]
+            std = [0.229, 0.224, 0.225]
+            
+            image = (image - mean) / std
+            image = torch.from_numpy(image).permute(2, 0, 1).float()
+        
+        # return image, label, ucode_label
+        return image, ucode_label
+
 # #%%
-# if __name__ == "__main__":
-    # root_annotation = "NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1871/1871-annotation/annotation-mynom"
-    # root_image = "NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1871/1871-raw-images"
-    # scale = 2
-    # dataset = NomDatasetV1(root_annotation, root_image, scale)
-        
-    # #%%
-    # from matplotlib import pyplot as plt
-    # img_hr, img_lr, label_char, label_unicode_cn, label_unicode_vn = dataset[0]
-    # print("Label char: " + label_char)
-    # print("Label CN: " + label_unicode_cn)
-    # print("Label VN: " + label_unicode_vn)
+# with open('NomDataset/HWDB1.1-bitmap64-ucode-hannom-v2-tst-label-set-ucode.pkl', 'rb') as f:
+#     unicode_labels = pickle.load(f)
+# for i, (k, v) in enumerate(unicode_labels.items()):
+#     unicode_labels[k] = i
+#     print(i, k)
+# print(unicode_labels)
+# print(len(unicode_labels))
 
-    # plt.subplot(1,2,1)
-    # plt.imshow(img_hr)
-    # plt.subplot(1,2,2)  
-    # plt.imshow(img_lr)
-
-    # dataset = NomDatasetV2(root_annotation, root_image, scale)
-
-    # img_path, img_hr, img_lr, crop_coords_hr, crop_coords_lr, label_char, label_unicode_cn, label_unicode_vn = dataset[0]
-
-    # print("Label char: " + str(label_char))
-    # print("Label CN: " + str(label_unicode_cn))
-    # print("Label VN: " + str(label_unicode_vn))
-
-    # for i in range(len(crop_coords_hr)):
-    #     cv2.rectangle(img_hr, (crop_coords_hr[i][0], crop_coords_hr[i][1]), (crop_coords_hr[i][2], crop_coords_hr[i][3]), (0, 255, 0), 2)
-        
-    # for i in range(len(crop_coords_lr)):
-    #     cv2.rectangle(img_lr, (crop_coords_lr[i][0], crop_coords_lr[i][1]), (crop_coords_lr[i][2], crop_coords_lr[i][3]), (0, 255, 0), 2)
-
-    # plt.subplot(1,2,1)
-    # plt.imshow(img_hr)
-    # plt.subplot(1,2,2)  
-    # plt.imshow(img_lr)
+# #%%
+# dataset = NomDataset_Yolo('NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1902/1902-raw-images',
+#                           'yolov5_runs/detect/yolo_SR/labels',
+#                           'NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1902/1902-annotation/annotation-mynom',
+#                           'NomDataset/HWDB1.1-bitmap64-ucode-hannom-v2-tst-label-set-ucode.pkl')

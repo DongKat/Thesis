@@ -1,3 +1,6 @@
+# This code is copied from Thu's work
+# Fixed to work with new version Python, Pytorch and Pytorch Lightning
+
 # Torch libraries imports
 import torch
 from torch import nn
