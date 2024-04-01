@@ -26,11 +26,7 @@ LVT_RAW = 'NomDataset/datasets/mono-domain-datasets/luc-van-tien/lvt-raw-images'
 LVT_RAW_ANNOTATIONS = 'NomDataset/datasets/mono-domain-datasets/luc-van-tien/lvt-annotation/annotation-mynom'
 BATCH_SIZE = 16
 
-
-
-
 #%%
-
 # Call yolo detect.py
 # TODO: This works, in acceptable condition
 from yolov5.detect import run as YoloInference
