@@ -170,3 +170,6 @@ runs/
 yolov5_runs/
 wandb/
 PytorchResNet101Pretrained-data-v2-epoch=14-val_loss_epoch=1.42927-train_acc_epoch=0.99997-val_acc_epoch=0.79039.ckpt
+Real-ESRGAN/
+BasicSR/
+HAT/
