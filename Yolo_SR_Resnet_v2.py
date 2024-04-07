@@ -11,7 +11,9 @@ import pybboxes as pybbx
 
 import torchvision
 from torch.nn.functional import softmax
-from torchmetrics import Accuracy, Precision, Recall, F1Score
+
+# imporst psnr and ssim
+
 
 import wandb
 
@@ -127,9 +129,13 @@ for idx, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
     # batch_img, batch_ulabel, batch_label = batch
     batch_img, batch_ulabel = batch
     with torch.no_grad():
+        img_lr = batch_img.deepcopy()
         batch_img = batch_img.to(DEVICE)
         
         esrgan_result = esrgan_model(batch_img)
+        
+        
+        
         # resnet_result = resnet_model(esrgan_result).cpu()
 
         resnet_result = resnet_model(torch.nn.functional.interpolate(esrgan_result, size=(64, 64), mode='bilinear', align_corners=False)).cpu()
