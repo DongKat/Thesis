@@ -1,6 +1,8 @@
 ## This notebook for Yolo -> SR -> ResNet
 ## And I'm trying to use Python Interactive Window in VSCode instead of Jupyter
 
+# TODO: DEPRECATED THIS FILE
+
 #%%
 from NomDataset import NomDatasetV1, NomDatasetV2
 

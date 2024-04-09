@@ -87,9 +87,9 @@ class PytorchResNet101(pl.LightningModule):
 
 
     def on_train_epoch_end(self):
-        epoch_average = torch.stack(self.training_step_outputs).mean()
-        acc_epoch_average = torch.stack([acc for _, acc in self.training_step_outputs]).mean()
-        self.log('train_loss_epoch', epoch_average, on_epoch=True, prog_bar=True, logger=True)
+        loss_epoch_average = torch.stack([loss for loss, _ in self.validation_step_outputs]).mean()
+        acc_epoch_average = torch.stack([acc for _, acc in self.validation_step_outputs]).mean()
+        self.log('train_loss_epoch', loss_epoch_average, on_epoch=True, prog_bar=True, logger=True)
         self.log('train_acc_epoch', acc_epoch_average, on_epoch=True, prog_bar=True, logger=True)
         self.training_step_outputs.clear()
         
@@ -117,9 +117,9 @@ class PytorchResNet101(pl.LightningModule):
 
 
     def on_validation_epoch_end(self):
-        epoch_average = torch.stack([loss for loss, _ in self.validation_step_outputs]).mean()
+        loss_epoch_average = torch.stack([loss for loss, _ in self.validation_step_outputs]).mean()
         acc_epoch_average = torch.stack([acc for _, acc in self.validation_step_outputs]).mean()
-        self.log('val_loss_epoch', epoch_average, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_loss_epoch', loss_epoch_average, on_epoch=True, prog_bar=True, logger=True)
         self.log('val_acc_epoch', acc_epoch_average, on_epoch=True, prog_bar=True, logger=True)
         self.validation_step_outputs.clear()
 
@@ -140,7 +140,7 @@ class PytorchResNet101(pl.LightningModule):
         acc = self.metrics(y_hat_argmax, y)
         self.log('test_accuracy', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
-        self.test_step_outputs.append(acc)
+        self.test_step_outputs.append((loss, acc))
         
         return acc
 

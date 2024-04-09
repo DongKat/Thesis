@@ -173,3 +173,5 @@ PytorchResNet101Pretrained-data-v2-epoch=14-val_loss_epoch=1.42927-train_acc_epo
 Real-ESRGAN/
 BasicSR/
 HAT/
+lightning_logs/
+tensorboard_logs/
