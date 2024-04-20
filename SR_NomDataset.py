@@ -10,27 +10,31 @@ import torch
 
 #%%
 class NomDatasetCrop(Dataset):
-    def __init__(self, crop_path : str, label_path : str, input_size : int | int, ucode_dict_path : str):
+    def __init__(self, crop_path : str, label_path : str, input_size : int | int, ucode_dict_path : str, transforms):
         self.crop_path = crop_path
         self.label_path = label_path
         self.ucode_dict_path = ucode_dict_path
+        self.transforms = transforms
         
-        self.input_size = (input_size, input_size)
+        self.input_size = input_size
         self.num_labels = 0
         
         self.crop_list = []
         self.labels_list = []
         self.ucode_dict = {}
                 
-        def read_crop(crop_path):
-            for crop in os.listdir(crop_path):
-                self.crop_list.append(crop)
-                
-        def read_label(label_path):
+        def read_crop_and_label(crop_path, label_path):
             with open(label_path, 'r') as f:
                 for line in f.readlines():
-                    line = line.split(' ')
+                    line = line.split(', ')  
                     self.labels_list.append(line[1].strip())
+                    crop = line[0].strip()
+                    # Check path exists
+                    if not os.path.exists(os.path.join(crop_path, crop)):
+                        raise FileNotFoundError(f'Crop image {crop} not found')
+                    else:
+                        self.crop_list.append(crop)
+                        
         def read_ucode_dict(ucode_dict_path):
             with open(ucode_dict_path, 'rb') as f:
                 labels = pickle.load(f)
@@ -39,8 +43,7 @@ class NomDatasetCrop(Dataset):
             for i, label in enumerate(labels):
                 self.ucode_dict[label] = i      # Dictionary to convert unicode to index int        
         
-        read_crop(crop_path)
-        read_label(label_path)
+        read_crop_and_label(crop_path, label_path)
         read_ucode_dict(ucode_dict_path)
         assert self.crop_list is not None, 'No crop images found'
         assert self.labels_list is not None, 'No labels found'
@@ -57,25 +60,17 @@ class NomDatasetCrop(Dataset):
         assert idx < len(self), 'Index out of range'
         img_path = os.path.join(self.crop_path, self.crop_list[idx])
         x_crop_img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-        x_crop_img = cv2.cvtColor(x_crop_img, cv2.COLOR_BGR2RGB)
-        x_crop_img = x_crop_img * 1.0 / 255.0
         h, w, _ = x_crop_img.shape
         if (h, w) != self.input_size:
             x_crop_img = cv2.resize(x_crop_img, self.input_size, cv2.INTER_LANCZOS4)
             
-        # x_crop_img = x_crop_img / 255.0
-        preprocess = transforms.Compose([
-            transforms.ToTensor(),
-            # transforms.Normalize(mean=[0.799, 0.818, 0.829], std=[0.183, 0.179, 0.178])
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-        x_crop_img = preprocess(x_crop_img).float()
+        x_crop_img = self.transforms(x_crop_img).float()
         
         y_label = self.labels_list[idx]
         try:
             y_label = self.ucode_dict[y_label]
         except KeyError:
-            # TODO: Handle unknown labels, cuz current dict does not have all Chinese ucode 
+            # TODO: Handle unknown labels, cuz current dict does not have all Sino-Nom ucode 
             y_label = self.ucode_dict['UNK']
         y_label = torch.tensor(y_label, dtype=torch.long) 
 

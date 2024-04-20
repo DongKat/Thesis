@@ -259,7 +259,7 @@ class NomDataset_Yolo(torch.utils.data.Dataset):
         for file in os.listdir(self.label_file_path):
             if file.endswith('.xlsx'):
                 self.label_files.append(file)
-        assert len(self.image_files) == len(self.label_files), "Number of image files and label files do not match"
+        assert len(self.image_files) == len(self.label_files), f"Number of image files and label files do not match. {len(self.image_files)} != {len(self.label_files)}"
 
     def load_crops(self) -> None:
         
@@ -318,6 +318,7 @@ class NomDataset_Yolo(torch.utils.data.Dataset):
                     
                     # Find the best IOU to label the cropped image
                     iou, box, idx = find_best_IOU(bbox, label_dict['boxes'])
+                    
                     
                     self.crop_dict['original_images_name'].append(image_file)
                     crop_img = image[int(y1):int(y2), int(x1):int(x2)]
