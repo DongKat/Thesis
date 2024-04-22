@@ -9,9 +9,9 @@ Currently recording:
 | Model           | ResNet_train | ToK1871_Acc_Train | ToK1902_Acc | LVT_Acc | ToK1902_PSNR | ToK1902_SSIM | LVT_PSNR | LVT_SSIM |
 | --------------- | ------------ | ----------------- | ----------- | ------- | ------------ | ------------ | -------- | -------- |
 | None            | HR           | 98%               | 75%         | 72%     | N/A          | N/A          | N/A      | N/A      |
-| ESRGAN          | HR           | N/A               | 0.7589      |         | 13.330       | 0.343        | 14.926   | 0.175    |
+| ESRGAN          | HR           | N/A               | 0.7251      | 0.4463  | 13.330       | 0.343        | 14.926   | 0.175    |
 | ESRGAN_Nom      | HR           | N/A               |             |         | 17.615       | 0.617        | 20.447   | 0.496    |
-| Real-ESRGAN     | HR           | N/A               | 37%         |         |              |              |          |          |
+| Real-ESRGAN     | HR           | N/A               | 0.7273      | 0.4401  |              |              |          |          |
 | Real-ESRGAN_Nom | HR           | N/A               |             |         |              |              |          |          |
 
 ## Resnet Exp / ToK1902
@@ -28,4 +28,4 @@ Currently recording:
 
 | Yolo_crops_224 | Raw_crops_224 | Yolo_crops_256 | Raw_crops_256 | Yolo_crops_64 | Raw_crops_64 |
 | -------------- | ------------- | -------------- | ------------- | ------------- | ------------ |
-|                |               |                |               |         |       |
+|                |               |                |               |               |              |
