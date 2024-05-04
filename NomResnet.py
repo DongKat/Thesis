@@ -10,15 +10,10 @@ from torch.optim.lr_scheduler import StepLR
 
 # Pytorch Lightning libraries imports
 import pytorch_lightning as pl
-from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.loggers.csv_logs import CSVLogger
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 # Torch utilities libraries imports
 import torchmetrics
-from torchvision.models import resnet101, ResNet101_Weights
-from torchvision import transforms
+from torchvision.models import resnet
 
 #%%
 class PytorchResNet101(pl.LightningModule):
@@ -28,7 +23,7 @@ class PytorchResNet101(pl.LightningModule):
         self.num_labels = num_labels
 
         # Get ResNet architecture and remove the last FC layer
-        backbone = resnet101(weights=ResNet101_Weights.DEFAULT)
+        backbone = resnet.resnet101(weights=resnet.ResNet101_Weights.DEFAULT)
         num_filters = backbone.fc.in_features
         layers = list(backbone.children())[:-1]
         
