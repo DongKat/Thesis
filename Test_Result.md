@@ -6,24 +6,23 @@ Currently recording:
 
 ## SR_Resnet Ckpt Experiments for NomDatasetCrop
 
-| Model           | ResNet_train | ToK1871_Acc_Train | ToK1902_Acc | LVT_Acc | ToK1902_PSNR | ToK1902_SSIM | LVT_PSNR | LVT_SSIM |
-| --------------- | ------------ | ----------------- | ----------- | ------- | ------------ | ------------ | -------- | -------- |
-| None            | HR           | 98%               | 75%         | 72%     | N/A          | N/A          | N/A      | N/A      |
-| ESRGAN          | HR           | N/A               | 0.7251      | 0.4463  | 13.330       | 0.343        | 14.926   | 0.175    |
-| ESRGAN_Nom      | HR           | N/A               |             |         | 17.615       | 0.617        | 20.447   | 0.496    |
-| Real-ESRGAN     | HR           | N/A               | 0.7273      | 0.4401  |              |              |          |          |
-| Real-ESRGAN_Nom | HR           | N/A               |             |         |              |              |          |          |
+| Model                 | ResNet_train | ToK1871_Acc | ToK1902_Acc | LVT_Acc | ToK1902_PSNR | ToK1902_SSIM | LVT_PSNR | LVT_SSIM |
+| --------------------- | ------------ | ----------- | ----------- | ------- | ------------ | ------------ | -------- | -------- |
+| None                  | HR           | 98%         | 75%         | 72%     | N/A          | N/A          | N/A      | N/A      |
+| ESRGAN                | HR           |             | 0.7251      | 0.4463  | 13.330       | 0.343        | 14.926   | 0.175    |
+| ESRGAN_Nom            | HR           |             |             |         | 17.615       | 0.617        | 20.447   | 0.496    |
+| Real-ESRGAN           | HR           |             | 0.3778      | 0.4401  |              |              |          |          |
+| Real-ESRGAN_x2_RealCE | HR           |             | 0.5438      | 0.6928  |              |              |          |          |
 
 ## SR_Resnet Ckpt Experiments for NomDatasetYolo
 
 | Model           | ResNet | ToK1871_Acc | ToK1902_Acc | LVT_Acc | ToK1902_PSNR | ToK1902_SSIM | LVT_PSNR | LVT_SSIM |
 | --------------- | ------ | ----------- | ----------- | ------- | ------------ | ------------ | -------- | -------- |
 | None            | HR     | 98%         | 75%         | 72%     | N/A          | N/A          | N/A      | N/A      |
-| ESRGAN          | HR     |             |             |         | 13.330       | 0.343        | 14.926   | 0.175    |
-| ESRGAN_Nom      | HR     |             |             |         | 17.615       | 0.617        | 20.447   | 0.496    |
+| ESRGAN          | HR     |             |             |         |              |              |          |          |
+| ESRGAN_Nom      | HR     |             |             |         |              |              |          |          |
 | Real-ESRGAN     | HR     |             |             |         |              |              |          |          |
 | Real-ESRGAN_Nom | HR     |             |             |         |              |              |          |          |
-
 
 ## Resnet Exp / ToK1871
 
