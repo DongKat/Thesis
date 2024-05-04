@@ -169,3 +169,7 @@ Backup/
 BasicSR/
 logs/
 
+/options
+/wandb
+/experiments
+/tb_logger
