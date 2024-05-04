@@ -33,17 +33,25 @@ TOK1902_RAW = 'NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1902/1902-r
 TOK1902_RAW_ANNOTATIONS = 'NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1902/1902-annotation/annotation-mynom'
 TOK1902_CROP = 'TempResources/ToK1902/Tok1902_crops'
 TOK1902_CROP_ANNOTATIONS = 'TempResources/ToK1902/ToK1902_crops.txt'
+TOK1902_REAL_ESRGAN_CROP = 'TempResources/ToK1902/ToK1902_SR_crop/Real_ESRGAN/RealESRGAN_x4plus'
+TOK1902_REAL_ESRGAN_NOM_CROP = 'TempResources/ToK1902/ToK1902_SR_crop/Real_ESRGAN/RealESGRANx2plus_RealCE_1K'
+TOK1902_REAL_ESRGAN_GP = 'TempResources/ToK1902/ToK1902_SR_crop/Real_ESRGAN/RealESRNETx2plus_ToK1871_GPloss_20epoch'
+TOK1902_REAL_ESRGAN_GP_USM = 'TempResources/ToK1902/ToK1902_SR_crop/Real_ESRGAN/RealESRNETx2plus_ToK1871_GPloss_20epoch_USM'
 
 TOK1871_CROP_ANNOTATIONS = 'TempResources/ToK1871/ToK1871_crops.txt'
 TOK1871_REAL_ESRGAN_CROP = 'TempResources/ToK1871/SR_ForResNet/Real-ESRGAN_224'
-TOK1871_REAL_ESRGAN_NOM_CROP = 'TempResources/ToK1871/SR_ForResNet/Real-ESRGAN_224_Nom'
+TOK1871_REAL_ESRGAN_RealCE_CROP = 'TempResources/ToK1902/ToK1902_SR_crop/Real_ESRGAN/RealESGRANx2plus_RealCE_1K'
 TOK1871_ESRGAN_CROP = 'TempResources/ToK1871/SR_ForResNet/ESRGAN_224'
 TOK1871_ESRGAN_NOM_CROP = 'TempResources/ToK1871/SR_ForResNet/ESRGAN_224_Nom'
 
 
 LVT_RAW = 'NomDataset/datasets/mono-domain-datasets/luc-van-tien/lvt-raw-images'
 LVT_RAW_ANNOTATIONS = 'NomDataset/datasets/mono-domain-datasets/luc-van-tien/lvt-annotation/annotation-mynom'
-
+LVT_CROP = 'TempResources/LVT/LVT_crops'
+LVT_CROP_ANNOTATIONS = 'TempResources/LVT/LVT_crop.txt'
+LVT_REAL_ESRGAN_RealCE_CROP = 'TempResources/LVT/LVT_SR_crop/Real_ESRGAN/RealESGRANx2plus_RealCE_1K'
+LVT_REAL_ESRGAN_GP = 'TempResources/LVT/LVT_SR_crop/Real_ESRGAN/RealESRNETx2plus_ToK1871_GPloss_20epoch'
+LVT_REAL_ESRGAN_GP_USM = 'TempResources/LVT/LVT_SR_crop/Real_ESRGAN/RealESRNETx2plus_ToK1871_GPloss_20epoch_USM'
 #%%
 # Call yolo detect.py
 # TODO: This works, in acceptable condition
@@ -90,15 +98,15 @@ preprocess = T.Compose([
 #                                transform=preprocess)
 
 
-dataset_crop = NomDatasetCrop(TOK1871_REAL_ESRGAN_CROP, TOK1871_CROP_ANNOTATIONS,
-                                input_size=(224, 224),
-                                ucode_dict_path=UCODE_DICT_PATH,
-                                transforms=preprocess)
+# dataset_crop = NomDatasetCrop(TOK1871_REAL_ESRGAN_CROP, TOK1871_CROP_ANNOTATIONS,
+#                                 input_size=(224, 224),
+#                                 ucode_dict_path=UCODE_DICT_PATH,
+#                                 transforms=preprocess)
 
-# dataset_crop = NomDatasetCrop(TOK1902_CROP, TOK1902_CROP_ANNOTATIONS,
-#                               input_size=(224, 224),
-#                               ucode_dict_path=UCODE_DICT_PATH,
-#                               transforms=preprocess)
+dataset_crop = NomDatasetCrop(LVT_REAL_ESRGAN_GP_USM, LVT_CROP_ANNOTATIONS,
+                              input_size=(224, 224),
+                              ucode_dict_path=UCODE_DICT_PATH,
+                              transforms=preprocess)
 
 # dataloader_yolo = DataLoader(dataset=dataset_yolo, batch_size=BATCH_SIZE, num_workers=0, shuffle=False)
 dataloader_crop = DataLoader(dataset=dataset_crop, batch_size=BATCH_SIZE, num_workers=0, shuffle=False)
@@ -111,25 +119,25 @@ print("Total number of unicode: ", len(unicode_labels))
 
 #%%
 # Sampling the dataset batch of 16
-batch = next(iter(dataloader_yolo))
-imgs, labels = batch
+# batch = next(iter(dataloader_yolo))
+# imgs, labels = batch
 
-plt.figure()
-for idx, i in enumerate(imgs, 1):
-    if idx == 17:
-        break
-    img = i.permute(1, 2, 0).numpy()
-    img = img * 255
-    img = img.clip(0, 255).astype('uint8')
-    plt.subplot(4, 4, idx)
-    plt.imshow(img)
-plt.show()    
-print("Labels:", end=' ')
-for j in labels:
-    if j == 'UNK':
-        print(j, end=', ')
-    else:
-        print(chr(int(j, 16)), end=', ')
+# plt.figure()
+# for idx, i in enumerate(imgs, 1):
+#     if idx == 17:
+#         break
+#     img = i.permute(1, 2, 0).numpy()
+#     img = img * 255
+#     img = img.clip(0, 255).astype('uint8')
+#     plt.subplot(4, 4, idx)
+#     plt.imshow(img)
+# plt.show()    
+# print("Labels:", end=' ')
+# for j in labels:
+#     if j == 'UNK':
+#         print(j, end=', ')
+#     else:
+#         print(chr(int(j, 16)), end=', ')
         
 batch = next(iter(dataloader_crop))
 imgs, labels = batch
@@ -155,29 +163,32 @@ for idx, i in enumerate(labels):
 
 #%%
 
-# randint = np.random.randint(0, len(dataset_yolo))
-randint = 3
-img, label = dataset_yolo[randint]
-img = img.permute(1, 2, 0).numpy()
-# Just the mean is enough to grasp the value range of image
-print("Image mean: ", img.mean())
-plt.imshow(img)
-plt.show()
-if label == 'UNK':
-    print("Label: ", label)
-else:
-    print("Label: ", chr(int(label, 16)))
+# # randint = np.random.randint(0, len(dataset_yolo))
+# randint = 3
+# img, label = dataset_yolo[randint]
+# img = img.permute(1, 2, 0).numpy()
+# # Just the mean is enough to grasp the value range of image
+# print("Image mean: ", img.mean())
+# plt.imshow(img)
+# plt.show()
+# if label == 'UNK':
+#     print("Label: ", label)
+# else:
+#     print("Label: ", chr(int(label, 16)))
 
 
-# randint = np.random.randint(0, len(dataset_crop))
-randint = 4
+randint = np.random.randint(0, len(dataset_crop))
+# randint = 4
 img, label = dataset_crop[randint]
 img = img.permute(1, 2, 0).numpy()
 print("Image mean: ", img.mean())
 plt.imshow(img)
 plt.show()
 print("Label: ", unicode_labels[label])
-print("Label: ", chr(int(unicode_labels[label], 16)))
+if unicode_labels[label] == 'UNK':
+    print("Label: ", unicode_labels[label])
+else:
+    print("Label: ", chr(int(unicode_labels[label], 16)))
 
 
 # #%%
@@ -204,38 +215,38 @@ torch.cuda.empty_cache()
 
 #%%
 # Test the Resnet with the test dataset NomDatatsetYolo
-dataloader = dataloader_yolo
+# dataloader = dataloader_yolo
 
-losses = []
-for idx, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
-    # batch_img, batch_ulabel, batch_label = batch
-    batch_img, batch_label = batch
-    batch_label = list(batch_label)
-    for i in range(len(batch_label)):
-        try:
-            batch_label[i] = unicode_labels.index(batch_label[i])
-        except:
-            batch_label[i] = unicode_labels.index('UNK')
-    batch_label = torch.tensor(batch_label, dtype=torch.long)
-    with torch.no_grad():
-        batch_img = batch_img.to(DEVICE)   
-        batch_label = batch_label.to(DEVICE)     
+# losses = []
+# for idx, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
+#     # batch_img, batch_ulabel, batch_label = batch
+#     batch_img, batch_label = batch
+#     batch_label = list(batch_label)
+#     for i in range(len(batch_label)):
+#         try:
+#             batch_label[i] = unicode_labels.index(batch_label[i])
+#         except:
+#             batch_label[i] = unicode_labels.index('UNK')
+#     batch_label = torch.tensor(batch_label, dtype=torch.long)
+#     with torch.no_grad():
+#         batch_img = batch_img.to(DEVICE)   
+#         batch_label = batch_label.to(DEVICE)     
         
-        resnet_result = resnet_model(batch_img)
+#         resnet_result = resnet_model(batch_img)
         
-        loss = resnet_model.criterion(resnet_result, batch_label)
-        losses.append(loss.item())
+#         loss = resnet_model.criterion(resnet_result, batch_label)
+#         losses.append(loss.item())
         
-        pred = softmax(resnet_result, dim=1)
-        pred = torch.argmax(pred, dim=1)
+#         pred = softmax(resnet_result, dim=1)
+#         pred = torch.argmax(pred, dim=1)
                 
-        acc = resnet_model.metrics(pred, batch_label)
+#         acc = resnet_model.metrics(pred, batch_label)
     
         
     
-losses = np.array(losses) / len(dataloader)
-print("Average loss: ", losses.mean())
-print("Average accuracy: ", resnet_model.metrics.compute())
+# losses = np.array(losses) / len(dataloader)
+# print("Average loss: ", losses.mean())
+# print("Average accuracy: ", resnet_model.metrics.compute())
 
 #%%
 # Test the Resnet with the test dataset NomDatasetCrop
