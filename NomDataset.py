@@ -229,11 +229,12 @@ class NomDatasetV2:
         return image_path, img_hr, img_lr, crop_coords_hr, crop_coords_lr, label_char, label_unicode_cn, label_unicode_vn
 
 class NomDataset_Yolo(torch.utils.data.Dataset):
-    def __init__(self, image_file_path, annotation_file_path, label_file_path, unicode_dict_path, transform=None) -> None:
+    def __init__(self, image_file_path, annotation_file_path, label_file_path, unicode_dict_path, image_size, transform=None) -> None:
         self.image_file_path = image_file_path
         self.annotation_file_path = annotation_file_path
         self.label_file_path = label_file_path
         self.unicode_dict_path = unicode_dict_path
+        self.image_size = image_size    # Target crop image size 
         
         self.image_files = []
         self.annotation_files = []
@@ -258,7 +259,7 @@ class NomDataset_Yolo(torch.utils.data.Dataset):
         for file in os.listdir(self.label_file_path):
             if file.endswith('.xlsx'):
                 self.label_files.append(file)
-        assert len(self.image_files) == len(self.label_files), "Number of image files and label files do not match"
+        assert len(self.image_files) == len(self.label_files), f"Number of image files and label files do not match. {len(self.image_files)} != {len(self.label_files)}"
 
     def load_crops(self) -> None:
         
@@ -318,6 +319,7 @@ class NomDataset_Yolo(torch.utils.data.Dataset):
                     # Find the best IOU to label the cropped image
                     iou, box, idx = find_best_IOU(bbox, label_dict['boxes'])
                     
+                    
                     self.crop_dict['original_images_name'].append(image_file)
                     crop_img = image[int(y1):int(y2), int(x1):int(x2)]
                     self.crop_dict['crops'].append(crop_img)       
@@ -350,17 +352,22 @@ class NomDataset_Yolo(torch.utils.data.Dataset):
         if self.transform:
             image = self.transform(image)
         else:
-            image = cv2.resize(image, (64, 64), interpolation=cv2.INTER_CUBIC)
+            # Resize the image to 56x56
+            image = cv2.resize(image, (self.image_size, self.image_size), interpolation=cv2.INTER_CUBIC)
             image = image *  1.0 / 255
             
+            # TODO: This is the mean and std of ImageNet dataset, need to change to the mean and std of the dataset
             mean = [0.485, 0.456, 0.406]
             std = [0.229, 0.224, 0.225]
-            
+
+            # mean = [0.799, 0.818, 0.829]
+            # std = [0.183, 0.179, 0.179]
+
             image = (image - mean) / std
             image = torch.from_numpy(image).permute(2, 0, 1).float()
         
         # return image, label, ucode_label
-        return image, ucode_label
+        return image, label
 
 # #%%
 # with open('NomDataset/HWDB1.1-bitmap64-ucode-hannom-v2-tst-label-set-ucode.pkl', 'rb') as f:
@@ -372,7 +379,8 @@ class NomDataset_Yolo(torch.utils.data.Dataset):
 # print(len(unicode_labels))
 
 # #%%
-# dataset = NomDataset_Yolo('NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1902/1902-raw-images',
-#                           'yolov5_runs/detect/yolo_SR/labels',
-#                           'NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1902/1902-annotation/annotation-mynom',
+# dataset = NomDataset_Yolo('NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1871/1871-raw-images',
+#                           'TempResources/yolov5_runs_ToK1871/detect/yolo_SR/labels',
+#                           'NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1871/1871-annotation/annotation-mynom',
 #                           'NomDataset/HWDB1.1-bitmap64-ucode-hannom-v2-tst-label-set-ucode.pkl')
+# dataset[0]

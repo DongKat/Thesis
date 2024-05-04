@@ -1,11 +1,10 @@
 # This code is copied from Thu's work
 # Fixed to work with new version Python, Pytorch and Pytorch Lightning
-
+#%%
 # Torch libraries imports
 import torch
 from torch import nn
 from torch.nn.functional import softmax
-from torch.utils.data import DataLoader, Dataset
 from torch.optim import Adam, SGD
 from torch.optim.lr_scheduler import StepLR
 
@@ -18,39 +17,38 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 # Torch utilities libraries imports
 import torchmetrics
-from torchsummary import summary
-from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
-from torchvision.models import resnet101
+from torchvision.models import resnet101, ResNet101_Weights
 from torchvision import transforms
 
-
+#%%
 class PytorchResNet101(pl.LightningModule):
     def __init__(self, num_labels):
         super(PytorchResNet101, self).__init__()
         self.save_hyperparameters()
         self.num_labels = num_labels
 
-        # get ResNet architecture
-        backbone = resnet101(pretrained=True)
+        # Get ResNet architecture and remove the last FC layer
+        backbone = resnet101(weights=ResNet101_Weights.DEFAULT)
         num_filters = backbone.fc.in_features
         layers = list(backbone.children())[:-1]
+        
+        # Initialize layers
         self.feature_extractor = nn.Sequential(*layers)
-
+        self.flatten = nn.Flatten()
         self.classifier = nn.Linear(num_filters, self.num_labels)
 
-        self.criterion = nn.CrossEntropyLoss(reduction = 'mean')
-        self.metrics_accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=self.num_labels)
-
+        self.criterion = nn.CrossEntropyLoss()
+        self.metrics = torchmetrics.Accuracy(task="multiclass", num_classes=self.num_labels)
+    
         self.training_step_outputs = []
         self.validation_step_outputs = []
         self.test_step_outputs = []
 
-
     def forward(self, x):
-        representations = self.feature_extractor(x).flatten(1)
-        classification = self.classifier(representations)
-
-        return classification
+        x = self.feature_extractor(x)
+        x = self.flatten(x)
+        x = self.classifier(x)
+        return x
 
 
     def configure_optimizers(self):
@@ -68,36 +66,34 @@ class PytorchResNet101(pl.LightningModule):
 
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self(x)
-
-        # accuracy
-        y_hat_softmax = softmax(y_hat)
+        x, y = batch # x.shape = (batch_size, 3, 224, 224), y.shape = (batch_size, 1)
+        
+        # Inference
+        y_hat = self(x) # y_hat.shape = (batch_size, num_labels)
+        y_hat_softmax = softmax(y_hat, dim=1)
         y_hat_argmax = torch.argmax(y_hat_softmax, dim=1)
 
-        acc = self.metrics_accuracy(y_hat_argmax, y)
+        # Accuracy
+        acc = self.metrics(y_hat_argmax, y)
         self.log('train_accuracy', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
-        # loss
+        # Loss
         loss = self.criterion(y_hat, y)
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
-        self.training_step_outputs.append(loss)
-
-        return {'loss': loss, 'train_accuracy': acc}
+        self.training_step_outputs.append((loss, acc))
+        
+        return loss
 
 
     def on_train_epoch_end(self):
-        epoch_average = torch.stack(self.training_step_outputs).mean()
-
-        self.log('train_acc_epoch', epoch_average, on_epoch=True, prog_bar=True, logger=True)
+        loss_epoch_average = torch.stack([loss for loss, _ in self.validation_step_outputs]).mean()
+        acc_epoch_average = torch.stack([acc for _, acc in self.validation_step_outputs]).mean()
+        self.log('train_loss_epoch', loss_epoch_average, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_acc_epoch', acc_epoch_average, on_epoch=True, prog_bar=True, logger=True)
         self.training_step_outputs.clear()
+        
 
-
-    # def convert_to_one_hot(self, y):
-    #     vector = np.zeros((y.shape[0], self.num_labels))
-    #     vector = torch.eye(self.num_labels)[y]
-    #     return torch.tensor(vector, dtype=torch.int)
 
     # VALIDATION
     def validation_step(self, batch, batch_idx):
@@ -108,33 +104,24 @@ class PytorchResNet101(pl.LightningModule):
         y_hat_softmax = softmax(y_hat)
         y_hat_argmax = torch.argmax(y_hat_softmax, dim=1)
 
-        acc = self.metrics_accuracy(y_hat_argmax, y)
+        acc = self.metrics(y_hat_argmax, y)
         self.log('val_acc', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         # loss
         loss = self.criterion(y_hat, y)
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
-        self.validation_step_outputs.append(loss)
+        self.validation_step_outputs.append((loss, acc))
 
-        return {'val_loss': loss, 'val_accuracy': acc}
+        return loss
 
-    def validation_step_end(self, batch_parts):
-        return batch_parts
 
     def on_validation_epoch_end(self):
-        epoch_average = torch.stack(self.validation_step_outputs).mean()
-
-        self.log('val_acc_epoch', epoch_average, on_epoch=True, prog_bar=True, logger=True)
+        loss_epoch_average = torch.stack([loss for loss, _ in self.validation_step_outputs]).mean()
+        acc_epoch_average = torch.stack([acc for _, acc in self.validation_step_outputs]).mean()
+        self.log('val_loss_epoch', loss_epoch_average, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_acc_epoch', acc_epoch_average, on_epoch=True, prog_bar=True, logger=True)
         self.validation_step_outputs.clear()
-
-
-    # Saver
-    def save_metrics(self, folder, filename, content):
-        with open(folder  + filename + '.txt', 'w', encoding='utf-8') as the_txt_file:
-            the_txt_file.write(str(content))
-        with open(folder + filename + '.pickle', 'wb') as f:
-            pickle.dump(content, f)
 
 
     # TEST
@@ -145,55 +132,22 @@ class PytorchResNet101(pl.LightningModule):
         y_hat_softmax = softmax(y_hat)
         y_hat_argmax = torch.argmax(y_hat_softmax, dim=1)
 
-        # accuracy
-        acc = self.metrics_accuracy(y_hat_argmax, y)
-        self.log('test_accuracy', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-
         # loss
         loss = self.criterion(y_hat, y)
         self.log('test_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
-        self.test_step_outputs.append(loss, acc)
+        # accuracy
+        acc = self.metrics(y_hat_argmax, y)
+        self.log('test_accuracy', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
-        # return {'test_loss': loss, 'test_accuracy': acc, 'ap': ap, 'auroc': auroc, 'confusion_matrix':confmat, 'f1': f1}
-        return {'test_loss': loss, 'test_accuracy': acc, 'y': y, 'y_hat':y_hat}
-
-    def test_step_end(self, batch_parts):
-        return batch_parts
-
-    def on_test_epoch_end(self, test_step_outputs):
-        acc = 0
-        loss = 0
-        count = 0
-        y = None
-        y_hat = None
-        for test_step_out in test_step_outputs:
-            if count == 0:
-                y = test_step_out['y']
-                y_hat = test_step_out['y_hat']
-            else:
-                y = torch.cat([y, test_step_out['y']], 0)
-                y_hat = torch.cat([y_hat, test_step_out['y_hat']], 0)
-            loss += test_step_out['test_loss']
-            acc += test_step_out['test_accuracy']
-            count += 1
-
-        acc = acc / count
-        self.log('test_acc_epoch', acc, on_epoch=True, prog_bar=True, logger=True)
-        self.save_metrics('metrics/', 'test_acc_epoch', acc)
-
-        loss = loss / count
-        self.log('test_loss_epoch', loss, on_epoch=True, prog_bar=True, logger=True)
-        self.save_metrics('metrics/', 'test_loss_epoch', loss)
-
-        y_hat_softmax = softmax(y_hat)
-        y_hat_argmax = torch.argmax(y_hat_softmax, dim=1)
-        self.save_metrics('ys/', 'y', y)
-        self.save_metrics('ys/', 'y_hat', y_hat)
-        self.save_metrics('ys/', 'y_hat_softmax', y_hat_softmax)
-        self.save_metrics('ys/', 'y_hat_argmax', y_hat_argmax)
+        self.test_step_outputs.append((loss, acc))
         
-if __name__ == '__main__':
-    seed_everything(42)
-    model = PytorchResNet101(num_labels=2)
-    print(model)
+        return acc
+
+    def on_test_epoch_end(self):
+        loss_epoch_average = torch.stack([loss for loss, _ in self.test_step_outputs]).mean()
+        acc_epoch_average = torch.stack([acc for _, acc in self.test_step_outputs]).mean()
+        self.log('test_acc_epoch', acc_epoch_average, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test_loss_epoch', loss_epoch_average, on_epoch=True, prog_bar=True, logger=True)
+        self.test_step_outputs.clear()
+
