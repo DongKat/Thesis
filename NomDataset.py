@@ -243,15 +243,23 @@ class ImageCropDataset(Dataset):
         return x_crop_img, y_label
 
 class ImageCropDataModule(pl.LightningDataModule):
-    def __init__(self, data_dirs : dict, ucode_dict : dict, input_size : int | int, batch_size : int, num_workers : int, transforms=None):
+    def __init__(self, data_dirs : dict, ucode_dict_path : str, input_size : int | int, batch_size : int, num_workers : int, transforms=None):
         super().__init__()
         self.data_dir = data_dirs
-        self.ucode_dict = ucode_dict
+        self.ucode_dict_path = ucode_dict_path
+        
         self.input_size = input_size
         self.transforms = transforms
 
         self.batch_size = batch_size
         self.num_workers = num_workers
+        
+        def read_ucode_dict(ucode_dict_path):
+            with open(ucode_dict_path, 'rb') as f:
+                ucode_dict = pickle.load(f)
+            for i, (k, v) in enumerate(ucode_dict.items()):
+                ucode_dict[k] = i
+        self.ucode_dict = read_ucode_dict(ucode_dict_path)
 
     def setup(self, stage=None):
         if stage == 'fit':

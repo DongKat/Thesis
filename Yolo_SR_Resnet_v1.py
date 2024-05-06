@@ -82,8 +82,7 @@ annotations = YOLO_RESULTS + '/labels' # Yolo will save the labels here
 
 
 #%%
-from NomDataset import NomDataset_Yolo
-from SR_NomDataset import NomDatasetCrop
+from NomDataset import NomDataset_Yolo, NomDatasetCrop
 
 preprocess = T.Compose([
     T.ToTensor(),

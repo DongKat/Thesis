@@ -70,7 +70,7 @@ class PytorchResNet101(pl.LightningModule):
 
         # Accuracy
         acc = self.metrics(y_hat_argmax, y)
-        self.log('train_accuracy', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_acc', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         # Loss
         loss = self.criterion(y_hat, y)
@@ -133,7 +133,7 @@ class PytorchResNet101(pl.LightningModule):
 
         # accuracy
         acc = self.metrics(y_hat_argmax, y)
-        self.log('test_accuracy', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test_acc', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         self.test_step_outputs.append((loss, acc))
         
