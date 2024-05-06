@@ -8,13 +8,20 @@ Currently recording:
 
 | Model                      | ResNet_train | ToK1871_Acc | ToK1902_Acc | LVT_Acc | ToK1902_PSNR | ToK1902_SSIM | LVT_PSNR | LVT_SSIM |
 | -------------------------- | ------------ | ----------- | ----------- | ------- | ------------ | ------------ | -------- | -------- |
-| None                       | HR           | 98%         | 75%         | 72%     | N/A          | N/A          | N/A      | N/A      |
+| None-Baseline              | HR           | 98%         | 75%         | 72%     | N/A          | N/A          | N/A      | N/A      |
 | ESRGAN                     | HR           |             | 0.7251      | 0.4463  | 13.330       | 0.343        | 14.926   | 0.175    |
 | ESRGAN_Nom                 | HR           |             |             |         | 17.615       | 0.617        | 20.447   | 0.496    |
 | Real-ESRGAN                | HR           |             | 0.3778      | 0.4401  |              |              |          |          |
 | Real-ESRGAN_x2_RealCE      | HR           |             | 0.5438      | 0.6928  |              |              |          |          |
 | Real-ESRGAN_x2_ToK1871     | HR           |             | 0.5515      | 0.6432  |              |              |          |          |
 | Real-ESRGAN_x2_ToK1871_USM | HR           |             | 0.4753      | 0.5472  |              |              |          |          |
+
+## SR_Resnet Ckpt Experiments for NomDatasetCrop, with SR crops
+
+| SR_Model              | ResNet_train | ToK1871_SR-Acc | ToK1902_SR-Acc | LVT_Acc | ToK1902_PSNR | ToK1902_SSIM | LVT_PSNR | LVT_SSIM |
+| --------------------- | ------------ | -------------- | -------------- | ------- | ------------ | ------------ | -------- | -------- |
+| None-Baseline         | HR           | 98%            | 75%            | 72%     | N/A          | N/A          | N/A      | N/A      |
+| Real-ESRGAN_x2_RealCE | SR           | 0.9599         | 0.7192         |         |              |              |          |          |
 
 ## SR_Resnet Ckpt Experiments for NomDatasetYolo
 
@@ -48,10 +55,9 @@ Currently recording:
 | -------------- | ------------- | -------------- | ------------- | ------------- | ------------ |
 | 0.7209         | 0.7174        |                |               |               |              |
 
-
 # Planning
+
 - Finetune Ckpt with SR
 - Pretrained Resnet101 with dataset SR, raw
 
 - HWDB 1.1, Dai Viet Su Ky
-
