@@ -173,3 +173,6 @@ logs/
 /wandb
 /experiments
 /tb_logger
+/tensorboard_logs
+/lightning_logs
+/Checkpoints
