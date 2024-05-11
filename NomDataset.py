@@ -259,6 +259,7 @@ class ImageCropDataModule(pl.LightningDataModule):
                 ucode_dict = pickle.load(f)
             for i, (k, v) in enumerate(ucode_dict.items()):
                 ucode_dict[k] = i
+            return ucode_dict
         self.ucode_dict = read_ucode_dict(ucode_dict_path)
 
     def setup(self, stage=None):
