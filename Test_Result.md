@@ -18,12 +18,13 @@ Currently recording:
 
 ## SR_Resnet Ckpt Experiments for NomDatasetCrop, with SR crops
 
-| SR_Model                               | ResNet_train | ToK1871-Acc | ToK1902-Acc | LVT_Acc | ToK1902_PSNR | ToK1902_SSIM | LVT_PSNR | LVT_SSIM |
-| -------------------------------------- | ------------ | ----------- | ----------- | ------- | ------------ | ------------ | -------- | -------- |
-| None-Baseline                          | HR           | 0.9442      | 0.7628      | 0.7270  | N/A          | N/A          | N/A      | N/A      |
-| Real-ESRGAN_x2_RealCE                  | SR           | 0.9907      | 0.7808      | 0.7121  |              |              |          |          |
-| Real-ESRGAN_x2_wMixedBackground        | SR           | 0.9956      | 0.7719      | 0.7342  |              |              |          |          |
-| Real-ESRGAN_x2_RealCE_wMixedBackground | SR           | 0.9960      | 0.7980      | 0.7390  |              |              |          |          |
+| SR_Model                               | ResNet_train | ToK1871-Acc | ToK1902-Acc | LVT_Acc | CASIA_HWDB_Acc | ToK1902_PSNR | ToK1902_SSIM | LVT_PSNR | LVT_SSIM |
+| -------------------------------------- | ------------ | ----------- | ----------- | ------- | -------------- | ------------ | ------------ | -------- | -------- |
+| None-Baseline                          | HR           | 0.9442      | 0.7628      | 0.7270  | 0.9350         | N/A          | N/A          | N/A      |          |
+| Real-ESRGAN_x2                         | SR           |             |             |         |                |              |              |          |          |
+| Real-ESRGAN_x2_wMixedBackground        | SR           | 0.9956      | 0.7719      | 0.7342  | 0.8327         |              |              |          |          |
+| Real-ESRGAN_x2_RealCE                  | SR           | 0.9907      | 0.7808      | 0.7121  |                |              |              |          |          |
+| Real-ESRGAN_x2_RealCE_wMixedBackground | SR           | 0.9960      | 0.7980      | 0.7390  |                |              |              |          |          |
 
 ## SR_Resnet Ckpt Experiments for NomDatasetYolo
 

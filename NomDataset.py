@@ -199,7 +199,7 @@ class ImageCropDataset(Dataset):
                     crop = line[0].strip()
                     # Check path exists
                     if not os.path.exists(os.path.join(crop_path, crop)):
-                        raise FileNotFoundError(f'Crop image {crop} not found')
+                        raise FileNotFoundError(f'Crop image {os.path.join(crop_path, crop)} not found')
                     else:
                         self.crop_list.append(crop)
 
