@@ -25,33 +25,28 @@ from torchsummary import summary
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 32
 
-UCODE_DICT_PATH = 'NomDataset/HWDB1.1-bitmap64-ucode-hannom-v2-tst_seen-label-set-ucode.pkl' 
+UCODE_DICT_PATH = 'E:/Datasets/NomDataset/HWDB1.1-bitmap64-ucode-hannom-v2-tst_seen-label-set-ucode.pkl' 
 
 # Images path for yolo. I test on 1902 first
 YOLO_WEIGHTS = 'yolov5/weights/yolo_one_label.pt'
+
 TOK1902_RAW = 'NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1902/1902-raw-images'
 TOK1902_RAW_ANNOTATIONS = 'NomDataset/datasets/mono-domain-datasets/tale-of-kieu/1902/1902-annotation/annotation-mynom'
 TOK1902_CROP = 'TempResources/ToK1902/Tok1902_crops'
 TOK1902_CROP_ANNOTATIONS = 'TempResources/ToK1902/ToK1902_crops.txt'
-TOK1902_REAL_ESRGAN_CROP = 'TempResources/ToK1902/ToK1902_SR_crop/Real_ESRGAN/RealESRGAN_x4plus'
-TOK1902_REAL_ESRGAN_NOM_CROP = 'TempResources/ToK1902/ToK1902_SR_crop/Real_ESRGAN/RealESGRANx2plus_RealCE_1K'
-TOK1902_REAL_ESRGAN_GP = 'TempResources/ToK1902/ToK1902_SR_crop/Real_ESRGAN/RealESRNETx2plus_ToK1871_GPloss_20epoch'
-TOK1902_REAL_ESRGAN_GP_USM = 'TempResources/ToK1902/ToK1902_SR_crop/Real_ESRGAN/RealESRNETx2plus_ToK1871_GPloss_20epoch_USM'
 
+TOK1871_CROP = 'TempResources/ToK1871/ToK1871_crops'
 TOK1871_CROP_ANNOTATIONS = 'TempResources/ToK1871/ToK1871_crops.txt'
-TOK1871_REAL_ESRGAN_CROP = 'TempResources/ToK1871/SR_ForResNet/Real-ESRGAN_224'
-TOK1871_REAL_ESRGAN_RealCE_CROP = 'TempResources/ToK1902/ToK1902_SR_crop/Real_ESRGAN/RealESGRANx2plus_RealCE_1K'
-TOK1871_ESRGAN_CROP = 'TempResources/ToK1871/SR_ForResNet/ESRGAN_224'
-TOK1871_ESRGAN_NOM_CROP = 'TempResources/ToK1871/SR_ForResNet/ESRGAN_224_Nom'
-
 
 LVT_RAW = 'NomDataset/datasets/mono-domain-datasets/luc-van-tien/lvt-raw-images'
 LVT_RAW_ANNOTATIONS = 'NomDataset/datasets/mono-domain-datasets/luc-van-tien/lvt-annotation/annotation-mynom'
 LVT_CROP = 'TempResources/LVT/LVT_crops'
 LVT_CROP_ANNOTATIONS = 'TempResources/LVT/LVT_crop.txt'
-LVT_REAL_ESRGAN_RealCE_CROP = 'TempResources/LVT/LVT_SR_crop/Real_ESRGAN/RealESGRANx2plus_RealCE_1K'
-LVT_REAL_ESRGAN_GP = 'TempResources/LVT/LVT_SR_crop/Real_ESRGAN/RealESRNETx2plus_ToK1871_GPloss_20epoch'
-LVT_REAL_ESRGAN_GP_USM = 'TempResources/LVT/LVT_SR_crop/Real_ESRGAN/RealESRNETx2plus_ToK1871_GPloss_20epoch_USM'
+
+HWDB_CROP = 'E:/Datasets/HWDB1.1/tmp/test_sample'
+HWDB_SR_CROP = 'E:/Datasets/HWDB1.1/tmp/SR_test_sample'
+HWDB_CROP_ANNOTATIONS = 'E:/Datasets/HWDB1.1/tmp/test_sample.txt'
+
 #%%
 # Call yolo detect.py
 # TODO: This works, in acceptable condition
@@ -82,13 +77,18 @@ annotations = YOLO_RESULTS + '/labels' # Yolo will save the labels here
 
 
 #%%
-from NomDataset import NomDataset_Yolo, NomDatasetCrop
+from NomDataset import ImageCropDataset
 
 preprocess = T.Compose([
     T.ToTensor(),
-    T.Resize((224, 224), interpolation=T.InterpolationMode.BICUBIC),
+    # T.Resize((224, 224), interpolation=T.InterpolationMode.BICUBIC),
     T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
+
+with open(UCODE_DICT_PATH, 'rb') as f:
+    ucode_dict = pickle.load(f)
+for idx, i in enumerate(ucode_dict.keys()):
+    ucode_dict[i] = idx
 
 
 # dataset_yolo = NomDataset_Yolo(TOK1902_RAW, annotations, TOK1902_RAW_ANNOTATIONS, 
@@ -102,21 +102,17 @@ preprocess = T.Compose([
 #                                 ucode_dict_path=UCODE_DICT_PATH,
 #                                 transforms=preprocess)
 
-dataset_crop = NomDatasetCrop(LVT_REAL_ESRGAN_GP_USM, LVT_CROP_ANNOTATIONS,
+dataset_crop = ImageCropDataset(HWDB_SR_CROP, HWDB_CROP_ANNOTATIONS,
                               input_size=(224, 224),
-                              ucode_dict_path=UCODE_DICT_PATH,
+                              ucode_dict=ucode_dict,
                               transforms=preprocess)
 
 # dataloader_yolo = DataLoader(dataset=dataset_yolo, batch_size=BATCH_SIZE, num_workers=0, shuffle=False)
-dataloader_crop = DataLoader(dataset=dataset_crop, batch_size=BATCH_SIZE, num_workers=0, shuffle=False)
-
-data_path_label = 'NomDataset/HWDB1.1-bitmap64-ucode-hannom-v2-tst_seen-label-set-ucode.pkl'
-with open(data_path_label, 'rb') as f:
-    unicode_labels = pickle.load(f)
-    unicode_labels = sorted(list(unicode_labels.keys()))
-print("Total number of unicode: ", len(unicode_labels))
+dataloader_crop = DataLoader(dataset=dataset_crop, batch_size=BATCH_SIZE, num_workers=0, shuffle=True)
 
 #%%
+unicode_labels = {idx: i for i, idx in ucode_dict.items()}
+
 # Sampling the dataset batch of 16
 # batch = next(iter(dataloader_yolo))
 # imgs, labels = batch
@@ -152,9 +148,9 @@ for idx, i in enumerate(imgs, 1):
 plt.show()
 
 labels = labels.tolist()
-print("Labels:", [unicode_labels[i] for i in labels])
+print("Labels:", [unicode_labels[i] for i in labels][:16])
 print("Labels:", end=' ')
-for idx, i in enumerate(labels):
+for idx, i in enumerate(labels[:16]):
     if unicode_labels[i] == 'UNK':
         print("UNK", end=', ')
     else:
@@ -179,6 +175,7 @@ for idx, i in enumerate(labels):
 randint = np.random.randint(0, len(dataset_crop))
 # randint = 4
 img, label = dataset_crop[randint]
+label = label.item()
 img = img.permute(1, 2, 0).numpy()
 print("Image mean: ", img.mean())
 plt.imshow(img)
@@ -202,7 +199,8 @@ else:
 
 #%%
 from NomResnet import PytorchResNet101
-resnet_weights = 'Backup/PytorchResNet101Pretrained-data-v2-epoch=14-val_loss_epoch=1.42927-train_acc_epoch=0.99997-val_acc_epoch=0.79039_old.ckpt'
+resnet_weights = 'Backup/pretrained_model/PytorchResNet101Pretrained-data-v2-epoch=14-val_loss_epoch=1.42927-train_acc_epoch=0.99997-val_acc_epoch=0.79039_old.ckpt'
+# resnet_weights = 'Checkpoints/Resnet_Ckpt/Resnet_Tok1871_SR-RealESRGANx2_RealCE-epoch=29-train_acc_epoch=0.9960-val_acc_epoch=0.7980-train_loss_epoch=0.0232-val_loss_epoch=1.1730.ckpt'
 resnet_model = PytorchResNet101.load_from_checkpoint(resnet_weights, num_labels=len(unicode_labels))
 resnet_model.eval()
 resnet_model.freeze()
@@ -272,3 +270,46 @@ for idx, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
 losses = np.array(losses) / len(dataloader)
 print("Average loss: ", losses.mean())
 print("Average accuracy: ", resnet_model.metrics.compute())
+
+# %%
+#%%
+dataloader = dataloader_crop
+
+batch = next(iter(dataloader))
+imgs, labels = batch
+
+
+plt.figure()
+for idx, i in enumerate(imgs, 1):
+    if idx == 17:
+        break
+    img = i.permute(1, 2, 0).numpy()
+    img = img * 255
+    img = img.clip(0, 255).astype('uint8')
+    plt.subplot(4, 4, idx)
+    plt.imshow(img)
+plt.show()
+
+labels = labels.tolist()
+print("Labels:", [unicode_labels[i] for i in labels][:16])
+print("Labels:", end=' ')
+for idx, i in enumerate(labels[:16]):
+    if unicode_labels[i] == 'UNK':
+        print("UNK", end=', ')
+    else:
+        print(chr(int(unicode_labels[i], 16)), end=', ')
+
+
+pred = resnet_model(imgs.to(DEVICE))
+pred = softmax(pred, dim=1)
+pred = torch.argmax(pred, dim=1)
+
+print("\nPredictions:", end=' ')
+pred_labels = pred.tolist()
+pred_labels = [unicode_labels[i] for i in pred_labels[:16]]
+for i in pred_labels:
+    if i == 'UNK':
+        print(i, end=', ')
+    else:
+        print(chr(int(i, 16)), end=', ')
+# %%
