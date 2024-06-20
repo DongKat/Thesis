@@ -176,3 +176,7 @@ logs/
 /tensorboard_logs
 /lightning_logs
 /Checkpoints
+/Yolo_SR_Resnet/data
+/Yolo_SR_Resnet/detect
+/Yolo_SR_Resnet/test
+
