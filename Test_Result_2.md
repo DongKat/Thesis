@@ -17,8 +17,8 @@ Currently recording:
 ### Scale: 4
 | Model       | ResNet_train | Scale | ToK1871_Acc | ToK1902_Acc | LVT_Acc |
 | ----------- | ------------ | ----- | ----------- | ----------- | ------- |
-| ESRGAN      | Raw          | 4     | 0.8981      | 0.6841      |         |
-| Real-ESRGAN | Raw          | 4     | 0.9214      | 0.7151      |         |
+| ESRGAN      | Raw          | 4     | 0.8981      | 0.5504      |         |
+| Real-ESRGAN | Raw          | 4     | 0.9214      | 0.7151      | 0.6752  |
 | SwinIR      | Raw          | 4     |             |             |         |
 | HAT         | Raw          | 4     |             |             |         |
 
