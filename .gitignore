@@ -166,7 +166,7 @@ NomDataset/
 yolov5/
 TempResources/
 Backup/
-BasicSR/
+# BasicSR/
 logs/
 
 /options
