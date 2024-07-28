@@ -16,9 +16,9 @@ import torchmetrics
 from torchvision.models import resnet
 
 #%%
-class PytorchResNet101(pl.LightningModule):
+class NomResnet101(pl.LightningModule):
     def __init__(self, num_labels):
-        super(PytorchResNet101, self).__init__()
+        super(NomResnet101, self).__init__()
         self.save_hyperparameters()
         self.num_labels = num_labels
 

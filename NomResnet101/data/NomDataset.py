@@ -15,7 +15,7 @@ import pytorch_lightning as pl
 
 #%%
 class YoloCropDataset(Dataset):
-    def __init__(self, image_file_path : str, annotation_file_path : str, label_file_path : str, unicode_dict_path : str, image_size : int | int, transform : transforms.Compose):
+    def __init__(self, image_file_path : str, annotation_file_path : str, label_file_path : str, unicode_dict_path : str, image_size, transform : transforms.Compose):
         self.image_file_path = image_file_path
         self.annotation_file_path = annotation_file_path
         self.label_file_path = label_file_path
@@ -111,7 +111,7 @@ class YoloCropDataset(Dataset):
     def __len__(self) -> int:
         return len(self.crop_dict['crops'])
         
-    def __getitem__(self, index: int) -> torch.Tensor | torch.Tensor:
+    def __getitem__(self, index: int):
         assert index <= len(self), "Index out of range"
                 
         image = self.crop_dict['crops'][index]
@@ -139,7 +139,7 @@ class YoloCropDataset(Dataset):
         return image, label
 
 class YoloCropDataModule(pl.LightningDataModule):
-    def __init__(self, data_dirs : dict, input_size : int | int, batch_size : int, num_workers : int, transforms=None):
+    def __init__(self, data_dirs : dict, input_size, batch_size : int, num_workers : int, transforms=None):
         super().__init__()
         self.data_dir = data_dirs
         self.input_size = input_size
@@ -179,7 +179,7 @@ class ImageCropDataset(Dataset):
         transforms (Callable): Transforms to apply to the crop images.
 
     """
-    def __init__(self, crop_path : str, label_path : str, input_size : int | int, ucode_dict : dict, transforms):
+    def __init__(self, crop_path : str, label_path : str, input_size, ucode_dict : dict, transforms):
         self.crop_path = crop_path
         self.label_path = label_path
         self.ucode_dict = ucode_dict
@@ -243,7 +243,7 @@ class ImageCropDataset(Dataset):
         return x_crop_img, y_label
 
 class ImageCropDataModule(pl.LightningDataModule):
-    def __init__(self, data_dirs : dict, ucode_dict_path : str, input_size : int | int, batch_size : int, num_workers : int, transforms=None):
+    def __init__(self, data_dirs : dict, ucode_dict_path : str, input_size, batch_size : int, num_workers : int, transforms=None):
         super().__init__()
         self.data_dir = data_dirs
         self.ucode_dict_path = ucode_dict_path
