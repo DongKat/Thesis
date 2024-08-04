@@ -182,3 +182,5 @@ logs/
 Test_Result.md
 Test_Result_2.md
 
+/NomResnet101/Checkpoints
+/NomResnet101/lightning_logs
